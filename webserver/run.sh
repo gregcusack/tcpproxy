@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Running proxy..."
-python3 -u /app/proxy.py > /app/logs/log.log &
+python3 -u /app/proxy.py > /app/logs/log.log 2>&1 &
 
 sleep 1
 

@@ -21,7 +21,6 @@ class ConnectionTracker:
     def connection_exists(self, pkt):
         print("does connection exist??")
         connection = Connection(pkt)
-        print("checking on connection")
         if connection:
             return connection.five_tuple in self.connections
         elif connection == False:
