@@ -19,3 +19,18 @@ Deploy container `d1` and proxy
 sudo docker run --rm -d -p 8001:5000 --net proxy-netw --name d1 --cap-add=NET_ADMIN gregcusack/flask_app:v2
 ```
 
+
+Modify Payload
+```
+curl -X GET -H "modify-header: true" 192.168.5.92:8000/mirror/greg/lila
+```
+
+Just Get payload
+```
+curl -X GET 192.168.5.92:8000/get
+```
+
+Just query
+```
+curl 192.168.5.92:8000
+```
