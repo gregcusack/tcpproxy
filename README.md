@@ -5,6 +5,7 @@ sudo docker network create proxy-netw
 
 Build container
 ```
+cd webserver
 sudo docker build  -t gregcusack/flask_app:v2 .
 ```
 
