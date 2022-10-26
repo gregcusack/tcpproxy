@@ -15,6 +15,9 @@ class Connection:
             print("TCP not in packet. can't create connection object. returning None")
             return None
 
+        self.out_flow = None
+        self.in_flow = None 
+
         if self.five_tuple.direction == FlowDirection.outbound:
             self.out_flow = Flow(pkt[TCP].seq, pkt[TCP].ack, FlowDirection.outbound)
         elif self.five_tuple.direction == FlowDirection.inbound:
@@ -41,10 +44,17 @@ class Connection:
             print("Error. should not get here. ")
         five_tuple = FiveTuple.from_pkt(pkt)
         print("packet_update. flow direction: " + str(five_tuple.direction))
+
         if five_tuple.direction == FlowDirection.outbound:
-            self.update_outbound_flow(pkt)
+            if not self.out_flow:
+                self.out_flow = Flow(pkt[TCP].seq, pkt[TCP].ack, FlowDirection.outbound)
+            else:
+                self.update_outbound_flow(pkt)
         elif five_tuple.direction == FlowDirection.inbound:
-            self.update_inbound_flow(pkt)
+            if not self.in_flow:
+                self.in_flow = Flow(pkt[TCP].seq, pkt[TCP].ack, FlowDirection.inbound)
+            else:
+                self.update_inbound_flow(pkt)
         else:
             print('error packet is not inbound or outbound')        
 
