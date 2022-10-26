@@ -1,5 +1,6 @@
 from Connection import Connection
 from scapy.all import *
+from FiveTuple import FiveTuple
 
 
 class ConnectionTracker:
@@ -10,6 +11,8 @@ class ConnectionTracker:
 
     def add_connection(self, pkt):
         connection = Connection(pkt)
+        print("adding connection: ")
+        print(connection)
         if connection:
             self.connections[connection.five_tuple] = connection
         else:
@@ -20,25 +23,33 @@ class ConnectionTracker:
 
     def connection_exists(self, pkt):
         print("does connection exist??")
-        connection = Connection(pkt)
-        if connection:
-            return connection.five_tuple in self.connections
-        elif connection == False:
-            return False
-        else:
-            print("Error failed to check if connection exists: " + str(connection))
-            return None
+        five_tuple = FiveTuple.from_pkt(pkt)
+        return five_tuple in self.connections
+
+        # connection = Connection(pkt)
+        # if connection:
+        #     return connection.five_tuple in self.connections
+        # elif connection == False:
+        #     return False
+        # else:
+        #     print("Error failed to check if connection exists: " + str(connection))
+        #     return None
 
 
     def update_connection(self, pkt):
-        tmp_connection = Connection(pkt)
-        if tmp_connection:
-            five_tuple = tmp_connection.five_tuple
-            connection = self.connections[five_tuple]
-            connection.incoming_packet_update(pkt)
-            self.connections[five_tuple] = connection
-        else:
-            print("Error failed to update connection: " + str(connection))
+        five_tuple = FiveTuple.from_pkt(pkt)
+        connection = self.connections[five_tuple] # get the connection associated with the 5-tuple
+        connection.packet_update(pkt)
+        self.connections[five_tuple] = connection
+
+        # tmp_connection = Connection(pkt)
+        # if tmp_connection:
+        #     five_tuple = tmp_connection.five_tuple
+        #     connection = self.connections[five_tuple]
+        #     connection.incoming_packet_update(pkt)
+        #     self.connections[five_tuple] = connection
+        # else:
+        #     print("Error failed to update connection: " + str(connection))
 
     def drop_packet(self, pkt):
         ret = self.connection_exists(pkt)
@@ -51,7 +62,7 @@ class ConnectionTracker:
 
     def drop_packet_in_active_connection(self, pkt):
         print("dropping packet in active connection")
-        
+
 
     def drop_packet_in_new_connection(self, pkt):
         print("dropping packet in new connection")

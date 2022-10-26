@@ -12,17 +12,6 @@ load_contrib('bgp') #scapy does not automatically load items from Contrib. Must 
 count = Count()
 connections = ConnectionTracker()
 
-"""
-1) We can modify the packet if we maintain the same length and everything works as expected
-2) IF we modify the length of the TCP packet, then it fails despite updating the IP.len field
-3) I believe this is because the ACK that comes back is wrong. ACK that comes back will
-have old seq/ack numbers that are off by the length of the change we made.
-4) Steps
-    a) add in iptables to catch packets coming back from the server (aka ACKS)
-    b) match streams by direction -> client->server needs to be connected to server->client
-    c) Maintain ACKs/seq numbers
-
-"""
 
 def modify_packet(pkt):
     # print("modifying packet")
@@ -35,6 +24,8 @@ def modify_packet(pkt):
 
     len_old_load = len(load)
     len_new_load = len(replacement_load)
+
+    print("old, new load lens: " + str(len_old_load) + ", " + str(len_new_load))
 
     diff = 0
     if len_old_load > len_new_load:
@@ -54,6 +45,7 @@ def setup():
     QUEUE_NUM = 1 
     # insert the iptables FORWARD rule
     os.system("iptables -I INPUT -p tcp --dport 5000 -j NFQUEUE --queue-num {}".format(QUEUE_NUM))
+    os.system("iptables -I OUTPUT -p tcp --sport 5000 -j NFQUEUE --queue-num {}".format(QUEUE_NUM))
 
 def new_packet(packet):
     pkt = IP(packet.get_payload())
@@ -72,6 +64,7 @@ def new_packet(packet):
         current_count = count.get_count()
         print("packet count: " + str(current_count))
 
+        # packet.accept()
         if b"drop-header: true" in pkt[Raw].load:
             print("drop header == true. Dropping packet")
             connections.drop_packet(pkt)
@@ -100,8 +93,9 @@ def main():
         nfqueue.run()
     except KeyboardInterrupt:
         print('')
-
-    nfqueue.unbind()
+        # remove that rule we just inserted, going back to normal.
+        os.system("iptables --flush")
+        nfqueue.unbind()
 
 
 if __name__ == "__main__":
