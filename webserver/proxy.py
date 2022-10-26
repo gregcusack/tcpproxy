@@ -54,6 +54,7 @@ def setup():
     QUEUE_NUM = 1 
     # insert the iptables FORWARD rule
     os.system("iptables -I INPUT -p tcp --dport 5000 -j NFQUEUE --queue-num {}".format(QUEUE_NUM))
+    # os.system("iptables -I OUTPUT -p tcp --sport 5000 -j NFQUEUE --queue-num {}".format(QUEUE_NUM))
 
 def new_packet(packet):
     pkt = IP(packet.get_payload())
@@ -72,6 +73,7 @@ def new_packet(packet):
         current_count = count.get_count()
         print("packet count: " + str(current_count))
 
+        # packet.accept()
         if b"drop-header: true" in pkt[Raw].load:
             print("drop header == true. Dropping packet")
             connections.drop_packet(pkt)

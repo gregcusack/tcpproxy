@@ -1,10 +1,10 @@
 import threading
 from scapy.all import *
+from FiveTuple import FiveTuple
+from Flow import Flow
+from FlowDirection import FlowDirection
 
 class Connection:
-    # def __init__(self, src_port, dst_port, src_ip, dst_ip):
-    #     self.five_tuple = FiveTuple(proto="TCP", src_port=src_port, dst_port=dst_port, \
-    #         src_ip=src_ip, dst_ip=dst_ip)
 
     def __init__(self, pkt):
         if TCP in pkt:
@@ -15,78 +15,57 @@ class Connection:
             print("TCP not in packet. can't create connection object. returning None")
             return None
 
-        self.true_sequence_number = pkt[TCP].seq
-        self.proxy_sequence_number = pkt[TCP].seq
+        if self.five_tuple.direction == FlowDirection.outbound:
+            self.out_flow = Flow(pkt[TCP].seq, pkt[TCP].ack, FlowDirection.outbound)
+        elif self.five_tuple.direction == FlowDirection.inbound:
+            self.in_flow = Flow(pkt[TCP].seq, pkt[TCP].ack, FlowDirection.inbound)
+        else:
+            print("ERROR. five tuple is neither in flow or outflow!") 
 
-        self.true_ack_number = pkt[TCP].ack
-        self.proxy_ack_number = pkt[TCP].ack
-        self.num_packets = 1
-
-        self.packet_count_lock = threading.Lock()
-        self.sequence_number_lock = threading.Lock()
-        self.ack_number_lock = threading.Lock()
-
-
-    def incoming_packet_update(self, pkt):
-        if TCP not in pkt:
-            print("Error. should not get here. ")
-        self.update_packet_count()
-        self.update_sequence_numbers(pkt)
-        self.update_ack_numbers(pkt)
-
-
-    def update_packet_count(self):
-        self.packet_count_lock.acquire()
-        
-        self.num_packets += 1
-        val = self.num_packets
-        
-        self.packet_count_lock.release()
-        print("incr packets: " + str(val))
-
-    def update_sequence_numbers(self, pkt):
-        self.sequence_number_lock.acquire()
-        
-        self.true_sequence_number = pkt[TCP].seq
-        self.proxy_sequence_number = pkt[TCP].seq
-        
-        t_seq = self.true_sequence_number
-        p_seq = self.proxy_sequence_number
-        
-        self.sequence_number_lock.release()
-        print("seq num update (true, proxy): " + str(t_seq) + ", " + str(p_seq))
-
-    def update_ack_numbers(self, pkt):
-        self.ack_number_lock.acquire()
-        
-        self.true_ack_number = pkt[TCP].ack
-        self.proxy_ack_number = pkt[TCP].ack
-        
-        t_ack = self.true_ack_number
-        p_ack = self.proxy_ack_number
-        
-        self.ack_number_lock.release()
-        print("ack num update (true, proxy): " + str(t_ack) + ", " + str(p_ack))
-
-    
-    
-
-class FiveTuple:
-    def __init__(self, proto, src_port, dst_port, src_ip, dst_ip):
-        self.proto = proto
-        self.src_port = src_port
-        self.dst_port = dst_port
-        self.src_ip = src_ip
-        self.dst_ip = dst_ip
-
-    def __eq__(self, other):
-        return isinstance(other, self.__class__) and \
-            self.proto == other.proto and \
-            self.dst_port == other.dst_port and \
-            self.src_ip == other.src_ip and \
-            self.dst_ip == other.dst_ip #and \
-            # self.src_port == other.src_port
-
+        self.total_packets = 1
+        self.total_packets_lock = threading.Lock()
 
     def __hash__(self):
-        return hash((self.proto, self.dst_port, self.src_ip, self.dst_ip)) #,  self.src_port))
+        return hash(self.five_tuple)
+
+    def __eq__(self, other):
+        return isinstance(other, self.__class__) and self.five_tuple == other.five_tuple
+
+    def __repr__(self):
+        return f"<Connection five_tuple:{self.five_tuple}>"
+
+
+
+    def packet_update(self, pkt):
+        if TCP not in pkt:
+            print("Error. should not get here. ")
+        five_tuple = FiveTuple.from_pkt(pkt)
+        print("packet_update. flow direction: " + str(five_tuple.direction))
+        if five_tuple.direction == FlowDirection.outbound:
+            self.update_outbound_flow(pkt)
+        elif five_tuple.direction == FlowDirection.inbound:
+            self.update_inbound_flow(pkt)
+        else:
+            print('error packet is not inbound or outbound')        
+
+    def update_outbound_flow(self, pkt):
+        self.out_flow.update_packet_count()
+        self.out_flow.update_sequence_numbers(pkt[TCP].seq)
+        self.out_flow.update_ack_numbers(pkt[TCP].ack)
+    
+    def update_inbound_flow(self, pkt):
+        self.in_flow.update_packet_count()
+        self.in_flow.update_sequence_numbers(pkt[TCP].seq)
+        self.in_flow.update_ack_numbers(pkt[TCP].ack)
+
+
+    def update_total_packets(self):
+        self.total_packets_lock.acquire()
+        self.total_packets += 1
+        val = self.total_packets
+        self.total_packets_lock.release()
+        print("total packets in connection: " + str(val))
+
+
+
+    
