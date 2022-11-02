@@ -78,8 +78,8 @@ class Connection:
             print("outbound packet modified. update seq/ack")
             if m_pkt.payload_len_diff() > 0:
                 print("outbound payload len diff > 0: " + str(m_pkt.payload_len_diff()))
-                # self.our_surplus += m_pkt.payload_len_diff()
-                self.peer_surplus += m_pkt.payload_len_diff()
+                self.our_surplus += m_pkt.payload_len_diff()
+                # self.peer_surplus += m_pkt.payload_len_diff()
         else:
             print("outbound packet is not modified. but check on sequence numbers")
             if self.peer_surplus > 0: #deleted content received from peer, and we are responding
