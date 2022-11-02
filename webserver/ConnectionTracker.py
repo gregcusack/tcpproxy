@@ -9,8 +9,8 @@ class ConnectionTracker:
         self.connections = {}
 
 
-    def add_connection(self, pkt):
-        connection = Connection(pkt)
+    def add_connection(self, m_pkt):
+        connection = Connection(m_pkt.packet())
         print("adding connection: ")
         print(connection)
         if connection:
@@ -21,35 +21,23 @@ class ConnectionTracker:
     def get_connection(self, connection):
         return self.connections[connection.five_tuple]
 
-    def connection_exists(self, pkt):
+    def connection_exists(self, m_pkt):
         print("does connection exist??")
-        five_tuple = FiveTuple.from_pkt(pkt)
+        five_tuple = FiveTuple.from_pkt(m_pkt.packet())
         return five_tuple in self.connections
 
-        # connection = Connection(pkt)
-        # if connection:
-        #     return connection.five_tuple in self.connections
-        # elif connection == False:
-        #     return False
-        # else:
-        #     print("Error failed to check if connection exists: " + str(connection))
-        #     return None
-
-
-    def update_connection(self, pkt):
-        five_tuple = FiveTuple.from_pkt(pkt)
+    def update_connection(self, m_pkt):
+        five_tuple = FiveTuple.from_pkt(m_pkt.packet())
         connection = self.connections[five_tuple] # get the connection associated with the 5-tuple
-        connection.packet_update(pkt)
+        connection.packet_update(m_pkt)
+        # if connection.is_modified():
+        #     print("connection modified. need to update packet seq numbers")
+        #     self.update_seq_numbers(m_pkt)
         self.connections[five_tuple] = connection
 
-        # tmp_connection = Connection(pkt)
-        # if tmp_connection:
-        #     five_tuple = tmp_connection.five_tuple
-        #     connection = self.connections[five_tuple]
-        #     connection.incoming_packet_update(pkt)
-        #     self.connections[five_tuple] = connection
-        # else:
-        #     print("Error failed to update connection: " + str(connection))
+    # def update_seq_numbers(self, m_pkt):
+
+
 
     def drop_packet(self, pkt):
         ret = self.connection_exists(pkt)

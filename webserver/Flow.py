@@ -26,7 +26,7 @@ class Flow:
         val = self.packet_count
         
         self.packet_count_lock.release()
-        print("incr packets: " + str(val))
+        # print("incr packets: " + str(val))
     
     def update_sequence_numbers(self, seq_num):
         self.sequence_number_lock.acquire()

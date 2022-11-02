@@ -5,41 +5,12 @@ from scapy.layers.http import HTTPRequest
 import os
 from Count import Count
 from ConnectionTracker import ConnectionTracker
-from Connection import Connection
+from MutablePacket import MutablePacket
 
 load_contrib('bgp') #scapy does not automatically load items from Contrib. Must call function and module name to load.
 
 count = Count()
 connections = ConnectionTracker()
-
-
-def modify_packet(pkt):
-    # print("modifying packet")
-    load = pkt[Raw].load
-    print(load)
-    replacement_load = b"GET /mirror/greg/bruh HTTP/1.1\r\nHost: 192.168.5.92:8000\r\nUser-Agent: curl/7.79.1\r\nAccept: */*\r\nmodify-header: true\r\n\r\n"
-    pkt[Raw].load = replacement_load
-    print("new load")
-    print(pkt[Raw].load)
-
-    len_old_load = len(load)
-    len_new_load = len(replacement_load)
-
-    print("old, new load lens: " + str(len_old_load) + ", " + str(len_new_load))
-
-    diff = 0
-    if len_old_load > len_new_load:
-        diff = len_old_load - len_new_load
-        pkt[IP].len -= diff
-    elif len_old_load < len_new_load:
-        diff = len_new_load - len_old_load
-        pkt[IP].len += diff
-
-    print(pkt.show())
-    print("pkt post payload/len mod")
-
-    return pkt
-
 
 def setup():
     QUEUE_NUM = 1 
@@ -48,38 +19,64 @@ def setup():
     os.system("iptables -I OUTPUT -p tcp --sport 5000 -j NFQUEUE --queue-num {}".format(QUEUE_NUM))
 
 def new_packet(packet):
+    # We need to track all packets not just ones with a payload!!
+    print("##############################################")
+    print("new packet")
     pkt = IP(packet.get_payload())
+    m_pkt = MutablePacket(pkt)
+
+    print(m_pkt.packet().show())
+    count.incr_count()
+    current_count = count.get_count()
+    print("packet count: " + str(current_count))
+
     if Raw in pkt:# or BGPHeader in pkt:
-        print("new packet!")
-        if connections.connection_exists(pkt):
-            print("connection exists. updating stream")
-            connections.update_connection(pkt)
-        else:
-            print("connection does not exist. add")
-            connections.add_connection(pkt)
+        print("payload in packet")
+        # m_pkt = MutablePacket(pkt)
 
-        print(pkt.show())
-        # print(str(pkt.summary()))
-        count.incr_count()
-        current_count = count.get_count()
-        print("packet count: " + str(current_count))
+        """
+        Check for blockchain validation here.
+        If packet need mnodification here, set flag
+        """
+        if b"modify-header: true" in m_pkt.packet()[Raw].load:
+            print("modify packet! - blockchain check fails")
+            invalid_routes = []
+            invalid_routes.append("colorado")
+            m_pkt.edit_payload(maintain_length=True)
+        
+        elif b"modify-header: shrink" in m_pkt.packet()[Raw].load:
+            print("shrink packet! - blockchain check fails")
+            invalid_routes = []
+            invalid_routes.append("colorado")
+            m_pkt.edit_payload(maintain_length=False)
 
-        # packet.accept()
-        if b"drop-header: true" in pkt[Raw].load:
-            print("drop header == true. Dropping packet")
-            connections.drop_packet(pkt)
-            packet.drop()
-        elif b"modify-header: true" in pkt[Raw].load:
-            print("modify packet!")
-            new_pkt = modify_packet(pkt)
-            del new_pkt[IP].chksum
-            del new_pkt[TCP].chksum
-            packet.set_payload(bytes(new_pkt))
-            packet.accept()
-        else:
-            packet.accept()
-    else:
-        packet.accept()
+        
+    if not connections.connection_exists(m_pkt):
+        connections.add_connection(m_pkt)
+    connections.update_connection(m_pkt)
+
+    if m_pkt.is_modified():
+        packet.set_payload(bytes(m_pkt.packet()))
+        print("packet after modification: ")
+        print(m_pkt.packet().show())
+    
+    packet.accept()
+        
+
+        
+
+        # if connections.connection_exists(pkt):
+        #     print("connection exists. updating stream")
+        #     connections.update_connection(pkt)
+        # else:
+        #     print("connection does not exist. add")
+        #     connections.add_connection(pkt)
+
+       
+    # else:
+    #     packet.accept()
+    print("$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+
 
 
 
