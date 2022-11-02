@@ -53,32 +53,44 @@ class Connection:
         print("packet_update. flow direction: " + str(five_tuple.direction))
 
         if five_tuple.direction == FlowDirection.outbound:
+            print("outbound flow")
             if not self.out_flow:
+                print("outbound for connection not established yet")
                 self.out_flow = Flow(pkt[TCP].seq, pkt[TCP].ack, FlowDirection.outbound)
             else:
+                print("update outbound flow. outbound already established")
                 self.update_outbound_flow(m_pkt)
         elif five_tuple.direction == FlowDirection.inbound:
+            print("inbound flow")
             if not self.in_flow:
+                print("inbound for connection not established yet")
                 self.in_flow = Flow(pkt[TCP].seq, pkt[TCP].ack, FlowDirection.inbound)
             else:
+                print("update inbound flow. outbound already established")
                 self.update_inbound_flow(m_pkt)
         else:
             print('error packet is not inbound or outbound')        
 
     def update_outbound_flow(self, m_pkt):
+        print("updating outbound flow")
         self.out_flow.update_packet_count()
         if m_pkt.is_modified():
             print("outbound packet modified. update seq/ack")
             if m_pkt.payload_len_diff() > 0:
-                self.our_surplus += m_pkt.payload_len_diff()
+                print("outbound payload len diff > 0: " + str(m_pkt.payload_len_diff()))
+                # self.our_surplus += m_pkt.payload_len_diff()
+                self.peer_surplus += m_pkt.payload_len_diff()
         else:
+            print("outbound packet is not modified. but check on sequence numbers")
             if self.peer_surplus > 0: #deleted content received from peer, and we are responding
                 print("updating ack outbound")
                 m_pkt.incr_ack(self.peer_surplus)
+                m_pkt.set_modified()
             self.out_flow.update_sequence_numbers(m_pkt.seq())
             self.out_flow.update_ack_numbers(m_pkt.ack())
     
     def update_inbound_flow(self, m_pkt):
+        print("updating inbound flow")
         self.in_flow.update_packet_count()
         if m_pkt.is_modified():
             print("packet modified inbound. update seq/ack")
@@ -86,9 +98,12 @@ class Connection:
                 print("inbound payload len diff > 0: " + str(m_pkt.payload_len_diff()))
                 self.peer_surplus += m_pkt.payload_len_diff()
         else:
+            print("inbound packet is not modified. but check on sequence numbers")
             if self.peer_surplus > 0: #deleted content received from peer, and we are responding
                 print("updating ack inbound")
                 m_pkt.incr_ack(self.peer_surplus)
+                m_pkt.set_modified()
+                # m_pkt.incr_ack(10000)
             self.in_flow.update_sequence_numbers(m_pkt.seq())
             self.in_flow.update_ack_numbers(m_pkt.ack())
 

@@ -1,4 +1,6 @@
-
+Uhhhhh. need to know difference about peer/our surplus. Something is not right. 
+see update_inbound_flow and update_outbound_flow in Connection.py
+Need to compare to what we have on seq-ack-branch.
 
 1) We can modify the packet if we maintain the same length and everything works as expected
 2) IF we modify the length of the TCP packet, then it fails despite updating the IP.len field

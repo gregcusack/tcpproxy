@@ -28,7 +28,7 @@ RUN chmod a+x run.sh
 
 RUN mkdir -p /app/logs/
 
-RUN echo "adssssd"
+RUN echo "adsssssd"
 
 # # RUN git clone https://github.com/oremanj/python-netfilterqueue
 # RUN git clone --depth 1 --filter=blob:none -b dev https://github.com/gregcusack/python-netfilterqueue.git
