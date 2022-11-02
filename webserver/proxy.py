@@ -59,6 +59,8 @@ def new_packet(packet):
         packet.set_payload(bytes(m_pkt.packet()))
         print("packet after modification: ")
         print(m_pkt.packet().show())
+        print("run show2")
+        print(m_pkt.packet().show2())
     else:
         print("packet is not modified. accept packet as is.")
     

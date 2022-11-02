@@ -20,6 +20,8 @@ class Connection:
         self.in_flow = None 
         self.total_packets = 0
         self.total_packets_lock = threading.Lock()
+        self.peer_surplus_lock = threading.Lock()
+        self.our_surplus_lock = threading.Lock()
 
         self.peer_surplus = 0
         self.our_surplus = 0
@@ -35,6 +37,16 @@ class Connection:
 
     def is_modified(self):
         return (self.peer_surplus or self.our_surplus)
+
+    def increase_peer_surplus(self, amount):
+        self.peer_surplus_lock.acquire()
+        self.peer_surplus += amount
+        self.peer_surplus_lock.release()
+
+    def increase_our_surplus(self, amount):
+        self.our_surplus_lock.acquire()
+        self.our_surplus += amount
+        self.our_surplus_lock.release()
 
     def incr_total_packets(self):
         self.total_packets_lock.acquire()
@@ -78,8 +90,9 @@ class Connection:
             print("outbound packet modified. update seq/ack")
             if m_pkt.payload_len_diff() > 0:
                 print("outbound payload len diff > 0: " + str(m_pkt.payload_len_diff()))
-                self.our_surplus += m_pkt.payload_len_diff()
+                # self.our_surplus += m_pkt.payload_len_diff()
                 # self.peer_surplus += m_pkt.payload_len_diff()
+                self.increase_peer_surplus(m_pkt.payload_len_diff())
         else:
             print("outbound packet is not modified. but check on sequence numbers")
             if self.peer_surplus > 0: #deleted content received from peer, and we are responding
@@ -96,7 +109,8 @@ class Connection:
             print("packet modified inbound. update seq/ack")
             if m_pkt.payload_len_diff() > 0: # packet has been reduced in size
                 print("inbound payload len diff > 0: " + str(m_pkt.payload_len_diff()))
-                self.peer_surplus += m_pkt.payload_len_diff()
+                # self.peer_surplus += m_pkt.payload_len_diff()
+                self.increase_peer_surplus(m_pkt.payload_len_diff())
         else:
             print("inbound packet is not modified. but check on sequence numbers")
             if self.peer_surplus > 0: #deleted content received from peer, and we are responding

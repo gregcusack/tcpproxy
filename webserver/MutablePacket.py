@@ -18,11 +18,11 @@ class MutablePacket:
         self.diff = 0
         self.new_IP_len = 0
 
+        self.replacement_load_eq_len = b"GET /mirror/greg/bruh HTTP/1.1\r\nHost: 192.168.1.211:8000\r\nUser-Agent: curl/7.79.1\r\nAccept: */*\r\nmodify-header: true\r\n\r\n"
+        self.replacement_load_diff_len = b"GET /mirror/g/b HTTP/1.1\r\nHost: 192.168.1.211:8000\r\nUser-Agent: curl/7.58.0\r\nAccept: */*\r\nmodify-header: shrink\r\n\r\n"
         # self.replacement_load_eq_len = b"GET /mirror/greg/bruh HTTP/1.1\r\nHost: 192.168.1.211:8000\r\nUser-Agent: curl/7.79.1\r\nAccept: */*\r\nmodify-header: true\r\n\r\n"
-        # self.replacement_load_diff_len = b"GET /mirror/greg/bob HTTP/1.1\r\nHost: 192.168.1.211:8000\r\nUser-Agent: curl/7.58.0\r\nAccept: */*\r\nmodify-header: shrink\r\n\r\n"
-        self.replacement_load_eq_len = b"GET /mirror/greg/bruh HTTP/1.1\r\nHost: 192.168.1.23:8000\r\nUser-Agent: curl/7.79.1\r\nAccept: */*\r\nmodify-header: true\r\n\r\n"
         # self.replacement_load_diff_len = b"GET /mirror/greg/bob HTTP/1.1\r\nHost: 192.168.1.23:8000\r\nUser-Agent: curl/7.58.0\r\nAccept: */*\r\nmodify-header: shrink\r\n\r\n"
-        self.replacement_load_diff_len = b"GET /mirror/g/b HTTP/1.1\r\nHost: 192.168.1.23:8000\r\nUser-Agent: curl/7.58.0\r\nAccept: */*\r\nmodify-header: shrink\r\n\r\n"
+        # self.replacement_load_diff_len = b"GET /mirror/g/b HTTP/1.1\r\nHost: 192.168.1.211:8000\r\nUser-Agent: curl/7.58.0\r\nAccept: */*\r\nmodify-header: shrink\r\n\r\n"
 
     def is_modified(self):
         return self.been_modified
